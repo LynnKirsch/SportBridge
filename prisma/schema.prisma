@@ -1,0 +1,542 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CustomerOrderStatus {
+  DRAFT
+  UNDER_REVIEW
+  QUOTED
+  AWAITING_PAYMENT
+  PAID
+  PURCHASING
+  INBOUND_TRANSIT
+  AT_WAREHOUSE
+  OUTBOUND_TRANSIT
+  COMPLETED
+  MANUAL_REVIEW
+  CANCELLED
+}
+
+enum SubmissionValueState {
+  PROVIDED
+  NOT_SHOWN
+  NOT_APPLICABLE
+  NONE
+}
+
+enum ItemAvailability {
+  UNKNOWN
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum QuoteStatus {
+  DRAFT
+  PUBLISHED
+  ACCEPTED
+  EXPIRED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+enum QuoteLineType {
+  GOODS
+  SUPPLIER_DELIVERY
+  BANK_FEE
+  INTERMEDIARY_FEE
+  ADJUSTMENT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  PAYMENT_LINK
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  CUSTOMER_REPORTED
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+enum SupplierPurchaseStatus {
+  PENDING
+  PURCHASED
+  FAILED
+  MANUAL_REVIEW
+  CANCELLED
+}
+
+enum IncomingPackageStatus {
+  EXPECTED
+  IN_TRANSIT
+  RECEIVED
+}
+
+enum PackagingCondition {
+  NOT_ASSESSED
+  INTACT
+  DAMAGED
+}
+
+enum ShipmentStatus {
+  DRAFT
+  READY
+  IN_TRANSIT
+  READY_FOR_PICKUP
+  DELIVERED
+  CANCELLED
+}
+
+enum ShipmentPackageStatus {
+  PLANNED
+  PACKED
+  IN_TRANSIT
+  DELIVERED
+}
+
+enum ShipmentLegStatus {
+  PLANNED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum AuditActorRole {
+  CUSTOMER
+  MANAGER_PURCHASER
+  TECHNICAL_ADMIN
+  SYSTEM
+}
+
+model Supplier {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique @db.VarChar(64)
+  name            String
+  primaryHostname String   @unique
+  websiteUrl      String
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders CustomerOrder[]
+}
+
+model Warehouse {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique @db.VarChar(64)
+  name         String
+  countryCode  String   @db.Char(2)
+  region       String?
+  city         String
+  postalCode   String?
+  addressLine1 String
+  addressLine2 String?
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  procurementContexts ProcurementContext[]
+  incomingPackages    IncomingPackage[]
+  outboundShipments   OutboundShipment[]   @relation("ShipmentOriginWarehouse")
+}
+
+model CustomerOrder {
+  id                String              @id @default(uuid()) @db.Uuid
+  orderNumber       String              @unique @db.VarChar(32)
+  supplierId        String              @db.Uuid
+  status            CustomerOrderStatus @default(DRAFT)
+  customerReference String?
+  contactName       String
+  contactEmail      String?
+  contactPhone      String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  supplier            Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items               OrderItem[]
+  quotes              Quote[]
+  supplierPurchase    SupplierPurchase?
+  shipmentAssignments ShipmentOrder[]
+  statusHistory       OrderStatusEvent[]
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([customerReference])
+}
+
+model OrderItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order        CustomerOrder          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  submission   OrderItemSubmission?
+  verification OrderItemVerification?
+  quoteItems   QuoteItem[]
+  purchaseItem SupplierPurchaseItem?
+
+  @@unique([id, orderId])
+  @@index([orderId])
+}
+
+model OrderItemSubmission {
+  id                    String               @id @default(uuid()) @db.Uuid
+  orderItemId           String               @unique @db.Uuid
+  productUrl            String
+  submittedName         String?
+  submittedSku          String?
+  submittedSkuState     SubmissionValueState
+  submittedVariant      String?
+  submittedVariantState SubmissionValueState
+  submittedColor        String?
+  submittedColorState   SubmissionValueState
+  quantity              Int
+  displayedUnitPrice    Decimal?             @db.Decimal(18, 2)
+  displayedCurrencyCode String?              @db.Char(3)
+  imageStorageKey       String?
+  comment               String?
+  commentState          SubmissionValueState
+  submittedAt           DateTime             @default(now())
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+}
+
+model OrderItemVerification {
+  id                   String           @id @default(uuid()) @db.Uuid
+  orderItemId          String           @unique @db.Uuid
+  normalizedName       String
+  brand                String?
+  supplierSku          String?
+  verifiedVariant      String?
+  verifiedColor        String?
+  verifiedQuantity     Int
+  verifiedUnitPrice    Decimal          @db.Decimal(18, 2)
+  verifiedCurrencyCode String           @db.Char(3)
+  availability         ItemAvailability @default(UNKNOWN)
+  managerReference     String
+  verifiedAt           DateTime
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+}
+
+model ProcurementContext {
+  id                             String   @id @default(uuid()) @db.Uuid
+  receivingWarehouseId           String   @db.Uuid
+  supplierNameSnapshot           String
+  supplierHostnameSnapshot       String
+  receivingWarehouseNameSnapshot String
+  receivingCountryCode           String   @db.Char(2)
+  receivingRegion                String?
+  receivingCity                  String
+  receivingPostalCode            String?
+  receivingAddressLine1          String
+  receivingAddressLine2          String?
+  onwardDestinationCountryCode   String   @db.Char(2)
+  createdAt                      DateTime @default(now())
+
+  receivingWarehouse Warehouse @relation(fields: [receivingWarehouseId], references: [id], onDelete: Restrict)
+  quote              Quote?
+
+  @@index([receivingWarehouseId])
+}
+
+model Quote {
+  id                        String      @id @default(uuid()) @db.Uuid
+  orderId                   String      @db.Uuid
+  procurementContextId      String      @unique @db.Uuid
+  version                   Int
+  status                    QuoteStatus @default(DRAFT)
+  sourceCurrencyCode        String      @db.Char(3)
+  settlementCurrencyCode    String      @db.Char(3)
+  goodsSourceAmount         Decimal     @db.Decimal(18, 2)
+  exchangeRate              Decimal     @db.Decimal(20, 8)
+  exchangeRateSource        String
+  exchangeRateFetchedAt     DateTime
+  goodsConvertedAmount      Decimal     @db.Decimal(18, 2)
+  supplierDeliveryAmount    Decimal?    @db.Decimal(18, 2)
+  bankFeeAmount             Decimal     @db.Decimal(18, 2)
+  intermediaryFeeRate       Decimal     @db.Decimal(7, 6)
+  intermediaryFeeBaseAmount Decimal     @db.Decimal(18, 2)
+  intermediaryFeeAmount     Decimal     @db.Decimal(18, 2)
+  totalAmount               Decimal     @db.Decimal(18, 2)
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  publishedAt               DateTime?
+  expiresAt                 DateTime?
+  customerConfirmedAt       DateTime?
+
+  order              CustomerOrder      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  procurementContext ProcurementContext @relation(fields: [procurementContextId], references: [id], onDelete: Restrict)
+  items              QuoteItem[]
+  lines              QuoteLine[]
+  payments           PaymentRecord[]
+
+  @@unique([orderId, version])
+  @@index([status])
+}
+
+model QuoteItem {
+  id                     String   @id @default(uuid()) @db.Uuid
+  quoteId                String   @db.Uuid
+  orderItemId            String?  @db.Uuid
+  itemNameSnapshot       String
+  brandSnapshot          String?
+  skuSnapshot            String?
+  variantSnapshot        String?
+  colorSnapshot          String?
+  quantitySnapshot       Int
+  unitPriceSource        Decimal  @db.Decimal(18, 2)
+  lineTotalSource        Decimal  @db.Decimal(18, 2)
+  sourceCurrencyCode     String   @db.Char(3)
+  exchangeRate           Decimal  @db.Decimal(20, 8)
+  lineTotalSettlement    Decimal  @db.Decimal(18, 2)
+  settlementCurrencyCode String   @db.Char(3)
+  createdAt              DateTime @default(now())
+
+  quote     Quote      @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+
+  @@index([quoteId])
+  @@index([orderItemId])
+}
+
+model QuoteLine {
+  id                     String        @id @default(uuid()) @db.Uuid
+  quoteId                String        @db.Uuid
+  type                   QuoteLineType
+  descriptionSnapshot    String
+  sourceAmount           Decimal?      @db.Decimal(18, 2)
+  sourceCurrencyCode     String?       @db.Char(3)
+  settlementAmount       Decimal       @db.Decimal(18, 2)
+  settlementCurrencyCode String        @db.Char(3)
+  sortOrder              Int
+  createdAt              DateTime      @default(now())
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@unique([quoteId, sortOrder])
+  @@index([quoteId, type])
+}
+
+model PaymentRecord {
+  id                 String        @id @default(uuid()) @db.Uuid
+  quoteId            String        @db.Uuid
+  amount             Decimal       @db.Decimal(18, 2)
+  currencyCode       String        @db.Char(3)
+  method             PaymentMethod
+  status             PaymentStatus @default(PENDING)
+  externalReference  String?
+  comment            String?
+  proofStorageKey    String?
+  customerReportedAt DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId])
+  @@index([status])
+}
+
+model SupplierPurchase {
+  id                       String                 @id @default(uuid()) @db.Uuid
+  orderId                  String                 @unique @db.Uuid
+  externalOrderNumber      String?
+  status                   SupplierPurchaseStatus @default(PENDING)
+  actualAmount             Decimal?               @db.Decimal(18, 2)
+  actualCurrencyCode       String?                @db.Char(3)
+  proofStorageKey          String?
+  expectedBoxCount         Int?
+  expectedWarehouseArrival DateTime?
+  purchasedAt              DateTime?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  order            CustomerOrder          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  items            SupplierPurchaseItem[]
+  incomingPackages IncomingPackage[]
+
+  @@unique([id, orderId])
+  @@index([status])
+}
+
+model SupplierPurchaseItem {
+  id                 String   @id @default(uuid()) @db.Uuid
+  supplierPurchaseId String   @db.Uuid
+  orderItemId        String   @db.Uuid
+  orderId            String   @db.Uuid
+  quantity           Int
+  actualUnitPrice    Decimal  @db.Decimal(18, 2)
+  currencyCode       String   @db.Char(3)
+  createdAt          DateTime @default(now())
+
+  supplierPurchase SupplierPurchase @relation(fields: [supplierPurchaseId, orderId], references: [id, orderId], onDelete: Restrict)
+  orderItem        OrderItem        @relation(fields: [orderItemId, orderId], references: [id, orderId], onDelete: Restrict)
+
+  @@unique([orderItemId, orderId])
+  @@index([supplierPurchaseId])
+  @@index([orderId])
+}
+
+model IncomingPackage {
+  id                  String                @id @default(uuid()) @db.Uuid
+  supplierPurchaseId  String                @db.Uuid
+  warehouseId         String                @db.Uuid
+  trackingNumber      String?
+  status              IncomingPackageStatus @default(EXPECTED)
+  arrivedAt           DateTime?
+  exteriorPhotoKey    String?
+  weightKg            Decimal?              @db.Decimal(10, 3)
+  lengthCm            Decimal?              @db.Decimal(10, 2)
+  widthCm             Decimal?              @db.Decimal(10, 2)
+  heightCm            Decimal?              @db.Decimal(10, 2)
+  packagingCondition  PackagingCondition    @default(NOT_ASSESSED)
+  visibleDamageNotes  String?
+  receivedByReference String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  supplierPurchase SupplierPurchase @relation(fields: [supplierPurchaseId], references: [id], onDelete: Restrict)
+  warehouse        Warehouse        @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  @@index([supplierPurchaseId])
+  @@index([warehouseId, status])
+}
+
+model DeliveryDestination {
+  id                         String   @id @default(uuid()) @db.Uuid
+  shipmentId                 String   @unique @db.Uuid
+  recipientNameSnapshot      String
+  recipientPhoneSnapshot     String
+  recipientEmailSnapshot     String?
+  countryCode                String   @db.Char(2)
+  region                     String?
+  city                       String
+  postalCode                 String?
+  addressLine1               String
+  addressLine2               String?
+  pickupPointProvider        String?
+  pickupPointCode            String?
+  pickupPointAddressSnapshot String?
+  createdAt                  DateTime @default(now())
+
+  shipment OutboundShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+}
+
+model OutboundShipment {
+  id                String         @id @default(uuid()) @db.Uuid
+  shipmentNumber    String         @unique @db.VarChar(32)
+  originWarehouseId String         @db.Uuid
+  status            ShipmentStatus @default(DRAFT)
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  originWarehouse Warehouse            @relation("ShipmentOriginWarehouse", fields: [originWarehouseId], references: [id], onDelete: Restrict)
+  destination     DeliveryDestination?
+  orders          ShipmentOrder[]
+  packages        ShipmentPackage[]
+  legs            ShipmentLeg[]
+
+  @@index([originWarehouseId])
+  @@index([status])
+}
+
+model ShipmentOrder {
+  id           String    @id @default(uuid()) @db.Uuid
+  shipmentId   String    @db.Uuid
+  orderId      String    @db.Uuid
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+
+  shipment OutboundShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  order    CustomerOrder    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([shipmentId, orderId])
+  @@index([orderId, unassignedAt])
+}
+
+model ShipmentPackage {
+  id             String                @id @default(uuid()) @db.Uuid
+  shipmentId     String                @db.Uuid
+  packageNumber  Int
+  status         ShipmentPackageStatus @default(PLANNED)
+  trackingNumber String?
+  weightKg       Decimal?              @db.Decimal(10, 3)
+  lengthCm       Decimal?              @db.Decimal(10, 2)
+  widthCm        Decimal?              @db.Decimal(10, 2)
+  heightCm       Decimal?              @db.Decimal(10, 2)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  shipment OutboundShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+
+  @@unique([shipmentId, packageNumber])
+}
+
+model ShipmentLeg {
+  id                       String            @id @default(uuid()) @db.Uuid
+  shipmentId               String            @db.Uuid
+  sequence                 Int
+  status                   ShipmentLegStatus @default(PLANNED)
+  originCountryCode        String            @db.Char(2)
+  originLabelSnapshot      String
+  destinationCountryCode   String            @db.Char(2)
+  destinationLabelSnapshot String
+  carrierName              String?
+  trackingNumber           String?
+  trackingUrl              String?
+  expectedDeliveryAt       DateTime?
+  completedAt              DateTime?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  shipment OutboundShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+
+  @@unique([shipmentId, sequence])
+  @@index([status])
+}
+
+model OrderStatusEvent {
+  id             String               @id @default(uuid()) @db.Uuid
+  orderId        String               @db.Uuid
+  fromStatus     CustomerOrderStatus?
+  toStatus       CustomerOrderStatus
+  actorReference String?
+  actorRole      AuditActorRole
+  reason         String?
+  createdAt      DateTime             @default(now())
+
+  order CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+}
+
+model AuditLog {
+  id             String         @id @default(uuid()) @db.Uuid
+  actorReference String?
+  actorRole      AuditActorRole
+  action         String
+  entityType     String
+  entityId       String
+  before         Json?
+  after          Json?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorReference, createdAt])
+}
