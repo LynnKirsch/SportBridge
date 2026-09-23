@@ -1,0 +1,495 @@
+.page {
+  min-height: 100svh;
+  padding-bottom: var(--space-10);
+  background: var(--color-background);
+}
+
+.nav,
+.hero,
+.flow {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  column-gap: var(--grid-gap);
+  padding-inline: var(--page-gutter);
+}
+
+.nav {
+  min-height: 5.25rem;
+  align-items: center;
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.brand {
+  grid-column: 1 / span 3;
+  color: var(--color-text);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.brand::after {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: var(--space-2);
+  border-radius: 50%;
+  background: var(--color-accent);
+  content: "";
+  vertical-align: 0.15em;
+}
+
+.navMeta {
+  grid-column: 9 / -1;
+  justify-self: end;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero {
+  padding-block: var(--space-9) var(--space-7);
+}
+
+.hero h1,
+.hero p {
+  grid-column: 2 / 12;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+
+.hero p {
+  max-width: 44rem;
+  margin-top: var(--space-5);
+  color: color-mix(in srgb, var(--color-text) 72%, transparent);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.flow {
+  row-gap: var(--space-5);
+}
+
+.card {
+  grid-column: 2 / 12;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-white);
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
+}
+
+.sectionHeading h2,
+.sectionHeading p,
+.formHeader h2,
+.formHeader p {
+  margin: 0;
+}
+
+.sectionHeading h2,
+.formHeader h2,
+.productCopy h2,
+.success h2 {
+  color: var(--color-text);
+}
+
+.sectionHeading h2,
+.formHeader h2 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.sectionHeading p,
+.formHeader p {
+  margin-top: var(--space-2);
+  color: color-mix(in srgb, var(--color-text) 68%, transparent);
+}
+
+.detailsForm label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.detailsForm input,
+.detailsForm select,
+.detailsForm textarea {
+  width: 100%;
+  min-width: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: 500 1rem/1.3 var(--font-body);
+  outline: none;
+  padding: 0.9rem var(--space-4);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.detailsForm textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.detailsForm input:hover,
+.detailsForm select:hover,
+.detailsForm textarea:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+}
+
+.detailsForm input:focus-visible,
+.detailsForm select:focus-visible,
+.detailsForm textarea:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-white);
+  box-shadow: var(--focus-ring);
+}
+
+.detailsForm input[aria-invalid="true"],
+.detailsForm select[aria-invalid="true"],
+.detailsForm textarea[aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.detailsForm input::placeholder,
+.detailsForm textarea::placeholder {
+  color: color-mix(in srgb, var(--color-text) 58%, transparent);
+  opacity: 1;
+}
+
+.detailsForm button {
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+  color: var(--color-white);
+  cursor: pointer;
+  font: 700 0.9rem/1 var(--font-body);
+  padding: 0.95rem var(--space-5);
+  transition: background-color 160ms ease, transform 120ms ease, opacity 160ms ease;
+}
+
+.detailsForm button:hover {
+  background: color-mix(in srgb, var(--color-primary) 88%, var(--color-text));
+}
+
+.detailsForm button:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.detailsForm button:active {
+  transform: translateY(1px);
+}
+
+.detailsForm button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.sourceUrl {
+  margin-top: var(--space-5);
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, var(--color-text) 64%, transparent);
+  font-size: 0.82rem;
+}
+
+.loadingPreview {
+  display: grid;
+  grid-template-columns: minmax(10rem, 3fr) minmax(0, 7fr);
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.loadingImage,
+.loadingCopy i {
+  display: block;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--color-border) 58%, var(--color-surface));
+  animation: loadingPulse 1.4s ease-in-out infinite alternate;
+}
+
+.loadingImage {
+  aspect-ratio: 4 / 3;
+}
+
+.loadingCopy {
+  display: grid;
+  align-content: center;
+  gap: var(--space-3);
+}
+
+.loadingCopy i {
+  height: 0.9rem;
+}
+
+.loadingCopy i:first-child {
+  width: 72%;
+  height: 1.8rem;
+}
+
+.loadingCopy i:last-child {
+  width: 46%;
+}
+
+.preview {
+  display: grid;
+  grid-template-columns: minmax(14rem, 4fr) minmax(0, 6fr);
+  gap: clamp(var(--space-6), 4vw, var(--space-8));
+  align-items: start;
+}
+
+.preview img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  object-fit: contain;
+}
+
+.supplierName {
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.productCopy h2 {
+  margin: var(--space-3) 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.98;
+}
+
+.muted,
+.hint {
+  color: color-mix(in srgb, var(--color-text) 68%, transparent);
+}
+
+.muted + .muted {
+  margin-top: var(--space-1);
+}
+
+.hint {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.attributes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-5) 0 0;
+}
+
+.attributes div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.attributes dt {
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+.attributes dd {
+  margin: 0;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.manualState {
+  max-width: 52rem;
+}
+
+.formHeader {
+  margin-bottom: var(--space-7);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.contactSection {
+  margin: var(--space-8) 0 0;
+  border: 0;
+  border-top: var(--border-width) solid var(--color-border);
+  padding: var(--space-7) 0 0;
+}
+
+.contactSection legend {
+  margin-bottom: var(--space-5);
+  padding: 0;
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.detailsForm small,
+.contactError {
+  color: var(--color-error);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.contactError {
+  display: block;
+  margin-top: var(--space-3);
+}
+
+.submitRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.submitRow p {
+  max-width: 38rem;
+  color: color-mix(in srgb, var(--color-text) 66%, transparent);
+  font-size: 0.86rem;
+}
+
+.submitError {
+  margin-top: var(--space-5);
+  color: var(--color-error);
+  font-weight: 700;
+}
+
+.success {
+  width: min(52rem, calc(100% - (2 * var(--page-gutter))));
+  margin: var(--space-5) auto 0;
+  text-align: center;
+}
+
+.successMark {
+  display: block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: 0 auto var(--space-5);
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.success h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+}
+
+.orderNumber {
+  margin: var(--space-5) 0 var(--space-3);
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+@keyframes loadingPulse {
+  from { opacity: 0.48; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 959px) {
+  .hero h1,
+  .hero p,
+  .card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .nav {
+    min-height: 4.5rem;
+  }
+
+  .brand {
+    grid-column: 1 / span 7;
+  }
+
+  .navMeta {
+    display: none;
+  }
+
+  .hero {
+    padding-block: var(--space-8) var(--space-6);
+  }
+
+  .hero h1 {
+    font-size: 3.25rem;
+  }
+
+  .card {
+    border-radius: var(--radius-control);
+    padding: var(--space-5);
+  }
+
+  .loadingPreview,
+  .preview,
+  .formGrid,
+  .attributes {
+    grid-template-columns: 1fr;
+  }
+
+  .loadingImage,
+  .preview img {
+    max-width: 18rem;
+  }
+
+  .productCopy h2 {
+    font-size: 2.45rem;
+  }
+
+  .attributes div {
+    gap: var(--space-3);
+  }
+
+  .submitRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .submitRow button {
+    min-height: 3.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingImage,
+  .loadingCopy i {
+    animation: none;
+  }
+
+  .detailsForm input,
+  .detailsForm select,
+  .detailsForm textarea,
+  .detailsForm button {
+    transition: none;
+  }
+}
